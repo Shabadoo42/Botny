@@ -44,12 +44,12 @@ ISR(TIMER1_OVF_vect)        // interrupt service routine
 	TCNT1 = timer1_counter;   // preload timer
 	digitalWrite(ledPin, digitalRead(ledPin) ^ 1);
 	seconds++;
-	Serial.println(seconds);
+	//Serial.println(seconds);
 
 		if (seconds==120)
 		{
 			minutes++;
-			//Serial.println(minutes);
+			Serial.println(minutes);
 			seconds=0;
 		}
 
