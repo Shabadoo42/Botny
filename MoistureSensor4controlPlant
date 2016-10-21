@@ -1,0 +1,61 @@
+--ARDUINO SIDE--
+int analogVal = A0;     // Moisture sensor Pin
+int val = 0;           // variable to store the read value
+
+void setup()
+{
+  /* add setup code here */
+	pinMode(A0, INPUT); //A0 set as analog input
+	Serial.begin(9600); //  setup serial 
+}
+
+void loop()
+{
+  /* add main program code here */
+	val = analogRead(analogVal); 
+	
+	/*Mapped out moisture reading values from the sensor I have, Analog value of 500 is completely saturated,
+	where as a value of 1024 is completely dry - no moisture at all*/
+	int moistureReading = map(val, 491, 1023, 100, -1); 
+
+	delay(10000);
+
+	Serial.printf("%d%%\n", moistureReading);
+}
+--END OF ARDUINO CODE-- 
+
+--PROCESSING CODE--
+import processing.serial.*;
+
+Serial myPort;  // Create object from Serial class
+String val;     // Data received from the serial port 
+
+PrintWriter output;
+
+void setup()
+{
+// I know that the first port in the serial list on my mac
+// is Serial.list()[0].
+// On Windows machines, this generally opens COM1.
+// Open whatever port is the one you're using.
+String portName = Serial.list()[0]; //change the 0 to a 1 or 2 etc. to match your port
+myPort = new Serial(this, portName, 9600); 
+
+ //output = createWriter("moistureReadingsText.txt"); 
+}
+
+void draw()
+{
+  output = createWriter("moistureReadingsText.txt"); 
+  if ( myPort.available() > 0) 
+  {  // If data is available,
+  val = myPort.readStringUntil('\n');         // read it and store it in val
+  } 
+ 
+ println(val); //print it out in the console 
+ output.print(val); // Write to the file
+ output.flush(); // Writes the remaining data to the file
+ output.close();
+ loop();
+}
+--END OF PROCESSING CODE--
