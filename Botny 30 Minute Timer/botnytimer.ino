@@ -1,4 +1,3 @@
-
 /*
 Example Timer1 Interrupt
 Flash LED every second
@@ -6,12 +5,18 @@ Flash LED every second
 
 //Github request test 2
 
+#pragma SPARK_NO_PREPROCESSOR
+//#include "application.h"
+
 #define ledPin 13
 #define mistMaker 3
 #define indicator 12
 int timer1_counter;
 int seconds = 0;
-int minutes = 0;
+int minutes= 0;
+
+bool thirtyMinMarkOn = false;
+bool thirtyMinMarkOff = false;
 
 
 void setup()
@@ -39,6 +44,7 @@ void setup()
 	pinMode(indicator, OUTPUT);
 }
 
+
 ISR(TIMER1_OVF_vect)        // interrupt service routine
 {
 	TCNT1 = timer1_counter;   // preload timer
@@ -51,18 +57,37 @@ ISR(TIMER1_OVF_vect)        // interrupt service routine
 			minutes++;
 			Serial.println(minutes);
 			seconds=0;
+    }
+
+		if (minutes < 30)
+		{
+			thirtyMinMarkOn = true;
+			thirtyMinMarkOff = false;
 		}
-
-
-}
+		if (minutes > 30)
+		{
+		thirtyMinMarkOn = false;
+		thirtyMinMarkOff = true;
+   	}
+		if (minutes>60)
+		{
+			minutes=0;
+		}
+	}
 
 void loop()
 {
 
-		if (minutes % 30 == 0)
+		while (thirtyMinMarkOn)
 		{
-				digitalWrite(mistMaker, digitalRead(mistMaker) ^ 1);
-				digitalWrite(indicator, digitalRead(indicator) ^ 1);
+			digitalWrite(3, HIGH);
+			digitalWrite(12, HIGH);
+		}
+
+		while (thirtyMinMarkOff)
+		{
+			digitalWrite(3, LOW);
+			digitalWrite(12, LOW);
 		}
 
 }
