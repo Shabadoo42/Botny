@@ -7,7 +7,7 @@
 		<title>BOTNY - Home</title>
 	</head>
 	<body>
-		<a class="title" href="home.html">BOTNY</a>
+		<a class="title" href="home.html">BOTNY</h1>
 		<a class="subtitle selected" href="home.html">Home</a>
 		<a class="subtitle" href="design.html">Design</a>
 		<a class="subtitle" href="technology.html">Technology</a>
