@@ -22,85 +22,123 @@ int asd_address = 0x48;		//note PCF8591 defaults to 0x48
 int16_t val;				//keeps value
 uint8_t writeBuf[3];
 uint8_t readBuf[2];
-float anal0;
+float anal0;				//keeps analog value
 float anal1;
 const float VPS = 6.144/32768.0; 		//volts per step   was 4.096
 float adc0();
 float adc1();
 //THS functions
 #define MAXTIMINGS	85
-#define DHTPIN		7 //GPIO 4
+int DHTPIN	=	22; //23 for other
 int dht11_dat[5] = { 0, 0, 0, 0, 0 };
-int whileCounter = 0;
 void read_dht11_dat();
+int Humidity = 0;		//current humid
+int Temperature = 0;	//current temp
 
-//GLOBALS
-int upHumid = 0;	//box humid
-int upTemp = 0;		//box temp
-//int downTemp; //box temp
 
-//issues: pin control with wiringPiSetupGpio, multiple pins with THS
 int main()
 {
-	//wiringPiSetupGpio();
+	int lightPin = 17;		
+	int foggerPin = 4;
+	int fanPin = 15;
+	int peltierPin = 21;
+	int pwmPin = 18;
+	int circPump = 20;
+	int airstone = 9;
+	int redLed = 6;
+	int grnLed = 19;
+	int bluLed = 13;
+	int pwmHI = 1024; //max value 1024
+	int pwmLO = 512; //max value 1024
 	
-	int pin = 1800;	//test led
-	int lightPin = 111;		//change
-	int foggerPin =311;
-	int fanPin = 411;
-	int peltierPin = 18;
-	
-	pinMode(pin, OUTPUT);
 	pinMode(lightPin, OUTPUT);
 	pinMode(foggerPin, OUTPUT);
 	pinMode(fanPin, OUTPUT);
 	pinMode(peltierPin, OUTPUT);
+	pinMode(pwmPin, PWM_OUTPUT); // Set PWM LED as PWM output
+	pinMode(circPump, OUTPUT);
+	pinMode(airstone, OUTPUT);
+	pinMode(redLed, OUTPUT);
+	pinMode(grnLed, OUTPUT);
+	pinMode(bluLed, OUTPUT);
 	
 	int hr = hourCall();
 	int mn = minCall();
-	int begLED = 6;	//LED start time
-	int endLED = 23;	//LED end time
-	int upTempMax = 23;	//Celsius max desired heat
-	//int downTempMax = 20;	//Celsius max desired heat
-	int dcon = 2;	//fogger on time
-	int dcoff = 2;	//fogger off time
-	int fogTracker = 0;	//tracks which minute in duty cycle
+	int begLED = 6;			//LED start time <---why 
+	int endLED = 23;		//LED end time
+	int boxHumid = 0;		//box humidity
+	int tubHumid = 0;		//box humidity
+	int boxTemp = 0;		//box temp
+	int tubTemp = 0;		//box temp
+	int boxTempMax = 4;		//Celsius max desired heat <--- set
+	int tubTempMax = 7;		//Celsius max desired heat <--- set
+	int DCon = 2;			//fogger on time
+	int DCoff = 2;			//fogger off time
+	int fogTracker = 0;		//tracks which minute in duty cycle
 	float pHtest = adc0();	//intial ADC readings
 	float waterLevel = adc1();
 	
-	digitalWrite(peltierPin, 0);	//starts pin at 0
-	
-	if ( wiringPiSetup() == -1 )	//sets up dht11 THsensor
+	//sets up dht11 sensor and pins
+	if ( wiringPiSetupGpio() == -1 )
 			{exit( 1 );}
+	
+	//test code for pins
+	/*
+	while(1)
+	{
+		digitalWrite(fanPin, 1);
+		digitalWrite(peltierPin, 1);
+		delay(500);
+		digitalWrite(fanPin, 0);
+		digitalWrite(peltierPin, 0);
+		delay(500);
+		printf("meow\n");
+	}*/
 	
 	while(1)
 	{
-		printf("time%i:%i AN0:%4.2f AN1:%4.2f humid:%i temp:%i  \n", hr, mn, pHtest, waterLevel, upHumid, upTemp);
-		
-			//read_dht11_dat();	//for testing only
-		
+		printf("time%i:%i AN0:%4.2f AN1:%4.2f boxHumid:%i boxTemp:%i tubHumid:%i tubTemp:%i \n"
+			, hr, mn, pHtest, waterLevel, boxHumid, boxTemp, tubHumid, tubTemp);
+			
+			//TEMPERATURE SENSORS -> FANS n PELTIERS
+			//checks box temp every cycle and adjusts fan
+			DHTPIN = 22;				//switch to box pin
+			read_dht11_dat();		//read box data
+			boxHumid = Humidity;	//update box humidity values
+			boxTemp = Temperature;	//update box temperature values
+			//if too hot turn on fans
+			if (boxTempMax < boxTemp)
+			{
+				digitalWrite(fanPin, 1);
+				if (boxTemp - boxTempMax > 2) 
+					{pwmWrite(pwmPin, pwmHI);} // PWM High when 2+ degrees over
+				else
+					{pwmWrite(pwmPin, pwmLO);} // PWM Low when 1 degree over
+			}
+			else
+			{
+				digitalWrite(fanPin, 0);
+				pwmWrite(pwmPin, 0); // PWM LED at dim setting
+			}
+			//checks tub temp every cycle and adjusts peltier
+			DHTPIN = 23;			//switch to tub pin
+			read_dht11_dat();	
+			tubHumid = Humidity;
+			tubTemp = Temperature;
+			//if too hot turn on peltier
+			if (tubTempMax < tubTemp)
+			{digitalWrite(peltierPin, 1);}	
+			else
+			{digitalWrite(peltierPin, 0);}
+			
+			
 		if (mn != minCall())	//if a minute has passed
 		{
 			mn = minCall();	//resets tracker
 			
-			read_dht11_dat();	//check box temp
-			//if too hot turn on fans
-			if (upTempMax < upTemp)
-			{digitalWrite(fanPin, 1);}	
-			else
-			{digitalWrite(fanPin, 0);}
+			//code to update temp&humidity in thingspeak<-------------
 			
-			/*
-			//downTemp = thsDown();	//check tub temp
-			//if too hot turn on peltier
-			if (downTempMax < thsDown();)
-			{digitalWrite(peltierPin, 1);}	
-			else
-			{digitalWrite(peltierPin, 0);}
-			//code to update thingspeak<-------------
-			*/
-			
-			if (dcon > fogTracker)
+			if (DCon > fogTracker)
 			{
 				digitalWrite(peltierPin, 1);	//fog on
 				fogTracker++;	//increments tracker
@@ -109,7 +147,7 @@ int main()
 			{
 				digitalWrite(peltierPin, 0);	//fog off
 				fogTracker++;	//increments tracker
-				if (fogTracker >= (dcon + dcoff))
+				if (fogTracker >= (DCon + DCoff))
 				{fogTracker = 0;}
 			}
 			//code to update thingspeak<-------------
@@ -147,7 +185,7 @@ int main()
 			//code to update thingspeak<-------------
 			
 		}//end hr if
-		delay(500);	//why the hurry?
+		delay(2000);	//why the hurry?
 	}//end while
 	
 	return 0;
@@ -398,7 +436,7 @@ void read_dht11_dat()
 	uint8_t laststate	= HIGH;
 	uint8_t counter		= 0;
 	uint8_t j		= 0, i;
-	
+	int whileCounter = 0;
  
 	dht11_dat[0] = dht11_dat[1] = dht11_dat[2] = dht11_dat[3] = dht11_dat[4] = 0;
  
@@ -451,11 +489,11 @@ void read_dht11_dat()
 		//UNCOMMENT TO PRINT REGULARLY
 		//printf( "Hum = %d.%d %% Temp = %d.%d *C\n", dht11_dat[0], dht11_dat[1], dht11_dat[2], dht11_dat[3]);
 			whileCounter++;			//gi
-			upHumid = dht11_dat[0];	//captures humidity 
-			upTemp = dht11_dat[2];	//captures temperature
+			Humidity = dht11_dat[0];	//captures humidity 
+			Temperature = dht11_dat[2];	//captures temperature
 	}else  {
 		//write in code to break if too many cycles!!!!!!!!1
-		printf( "Data not good, skip\n" );
+		printf( "Data not good, skip\n" );	//delete after troubleshooting <-----------
 		//printf("CS%i\n",j);
 	}
 	if (whileCounter >= 1) break;
