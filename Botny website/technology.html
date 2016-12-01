@@ -9,11 +9,11 @@
 	<body>
 		<div id="titleBar">
 			<div id="titleBarContent">
-				<a class="title" href="index.html">BOTNY</a>
-				<a class="subtitle" href="index.html">Home</a>
-				<a class="subtitle" href="design.html">Design</a>
-				<a class="subtitle selected" href="technology.html">Technology</a>
+				<a id="title" href="index.html">BOTNY</a>
 				<a class="subtitle" href="about.html">About</a>
+				<a class="subtitle selected" href="technology.html">Technology</a>
+				<a class="subtitle" href="design.html">Design</a>
+				<a class="subtitle" href="index.html">Home</a>
 			</div>
 		</div>
 		<div id="content">
@@ -22,31 +22,17 @@
 			<iframe width="450" height="260" src="https://thingspeak.com/channels/173369/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=30&type=line"></iframe>
 			<iframe width="450" height="260" src="https://thingspeak.com/channels/173369/charts/3?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=30&type=line"></iframe>
 			<h1>Environment setup</h1>
-			<table>
-				<tr>
-					<td><p>Light schedule:</p></td>
-					<td><input placeholder="Start"></input></td>
-					<td><input placeholder="End"></input></td>
-				</tr>
-				<tr>
-					<td><p>Fogger schedule:</p></td>
-					<td><input placeholder="Start"></input></td>
-					<td><input placeholder="End"></input></td>
-				</tr>
-				<tr>
-					<td><p>Temperature range:</p></td>
-					<td><input placeholder="Minimum"></input></td>
-					<td><input placeholder="Maximum"></input></td>
-				</tr>
-				<tr>
-					<td><p>pH range:</p></td>
-					<td><input placeholder="Minimum"></input></td>
-					<td><input placeholder="Maximum"></input></td>
-				</tr>
-				<tr>
-					<td><input type="submit"></input></td>
-				</tr>
-			</table>
+			<form>
+				Light schedule:<br>
+				<input placeholder="Start"></input><input placeholder="End"></input><br>
+				Fogger schedule:<br>
+				<input placeholder="Start"></input><input placeholder="End"></input><br>
+				Temperature range:<br>
+				<input placeholder="Minimum"></input><input placeholder="Maximum"></input><br>
+				pH range:<br>
+				<input placeholder="Minimum"></input><input placeholder="Maximum"></input><br>
+				<input type="submit"></input>
+			</form>
 		</div>
 	</body>
 </html>
