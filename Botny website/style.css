@@ -3,28 +3,24 @@ body {
 	padding: 0px;
 	background: #eee;
 	font-family: 'Quicksand', sans-serif;
-	font-size: 25px;
+	font-size: 20px;
 	color: #888;
-	text-shadow: 0px 1px 3px #bbb;
+	text-shadow: 0px 1px 1px #777;
 }
 
 #titleBar {
-	margin: 0px auto 30px auto;
+	margin: 0px auto 60px auto;
 	min-width: 1000px;
-	padding: 0px;
+	padding: 10px 0px;
+	background: #93c47d;
+	box-shadow: 0px 1px 3px #bbb;
 }
 
-#titleBarContent {
+#titleBarContent, #content {
 	margin: 0px auto;
 	max-width: 1400px;
 	min-width: 1000px;
-	padding: 20px 0px;
-}
-
-#content {
-	margin: 60px auto;
-	max-width: 1400px;
-	min-width: 1000px;
+	padding: 0px;
 }
 
 a {
@@ -32,24 +28,34 @@ a {
 	font-weight: bold;
 	text-decoration: none;
 	color: #93c47d;
-	text-shadow: 0px 1px 3px #ccc;
+	text-shadow: none;
 }
 
-a.title {
-	margin: 30px;
+#title {
+	margin: 0px;
+	padding: 0px 30px;
 	vertical-align: middle;
-	font-size: 60px;
+	font-size: 40px;
 	font-style: normal;
+	color: #fff;
+	text-decoration: none;
+}
+
+a.title:hover {
+	text-decoration: none;
 }
 
 a.subtitle {
-	margin: 30px;
+	margin: 0px;
+	padding: 10px 30px;
 	vertical-align: middle;
-	font-size: 30px;
+	font-size: 20px;
 	font-style: normal;
+	color: #fff;
+	float: right;
 }
 
-a.subtitle:hover {
+a:hover {
 	text-decoration: underline;
 }
 
@@ -78,7 +84,6 @@ p {
 
 img {
 	margin: 30px;
-	max-width: 400px;
 	background: #fff;
 	border-style: solid;
 	border-width: 10px;
@@ -86,10 +91,14 @@ img {
 	box-shadow: 0px 1px 3px #bbb;
 }
 
-img.logo {
+#logo {
 	border-style: none;
 	background: none;
 	box-shadow: none;
+}
+
+img.bioPic {
+	max-width: 400px;
 }
 
 iframe {
@@ -101,8 +110,12 @@ iframe {
 	box-shadow: 0px 1px 3px #bbb;
 }
 
-input {
+form {
 	margin: 30px;
+}
+
+input {
+	margin: 10px 30px 30px 0px;
 	width: 90px;
 	padding: 10px;
 	border: none;
