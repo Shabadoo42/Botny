@@ -7,11 +7,12 @@
 #include <stdlib.h>	//exit function
 #include <inttypes.h>	//uint8_t, etc
 #include <linux/i2c-dev.h>	//i2c bus defintions
-//ths -some
+//ths
 #include <wiringPi.h>
 #include <stdint.h>
 //timecall
 #include <time.h>
+#include <sys/ioctl.h>
 
 //time call functions
 int minCall(void);
@@ -38,6 +39,7 @@ int Temperature = 0;	//current temp
 
 int main()
 {
+	//PIN VARIABLES
 	int lightPin = 17;		
 	int foggerPin = 4;
 	int fanPin = 15;
@@ -45,12 +47,13 @@ int main()
 	int pwmPin = 18;
 	int circPump = 20;
 	int airstone = 9;
-	int redLed = 6;
-	int grnLed = 19;
-	int bluLed = 13;
+	int redLed = 19;
+	int grnLed = 13;
+	int bluLed = 6;
 	int pwmHI = 1024; //max value 1024
 	int pwmLO = 512; //max value 1024
 	
+	//OUTPUTS
 	pinMode(lightPin, OUTPUT);
 	pinMode(foggerPin, OUTPUT);
 	pinMode(fanPin, OUTPUT);
@@ -62,79 +65,88 @@ int main()
 	pinMode(grnLed, OUTPUT);
 	pinMode(bluLed, OUTPUT);
 	
-	int hr = hourCall();
-	int mn = minCall();
-	int begLED = 6;			//LED start time <---why 
-	int endLED = 23;		//LED end time
+	//MAIN VARIABLES
+	//int hr = hourCall();	//set time initially
+	//int mn = minCall();
+	int hr = 99;			//offset to check everything at beginning
+	int mn = 99;			//offset to check everything at beginning
+	int begLED = 6;			//LED start hour 
+	int endLED = 23;		//LED end hour
 	int boxHumid = 0;		//box humidity
 	int tubHumid = 0;		//box humidity
 	int boxTemp = 0;		//box temp
 	int tubTemp = 0;		//box temp
 	int boxTempMax = 4;		//Celsius max desired heat <--- set
-	int tubTempMax = 7;		//Celsius max desired heat <--- set
+	int tubTempMax = 25;		//Celsius max desired heat <--- set
 	int DCon = 2;			//fogger on time
 	int DCoff = 2;			//fogger off time
 	int fogTracker = 0;		//tracks which minute in duty cycle
-	float pHtest = adc0();	//intial ADC readings
-	float waterLevel = adc1();
+	float pHtest = 0;		//intial ADC readings
+	float pHmin = 0;		//min desired pH	<---set
+	float pHmax = 9;		//max desired pH	<---set
+	float waterLevel = 0;
+	float waterMin = 0.5;	//minimum water level <---set
+	int hotFlag = 0;		//flag for hottub
+	int acidFlag = 0;		//flag for pH
+	int wetFlag = 0;		//flag for water level
 	
 	//sets up dht11 sensor and pins
 	if ( wiringPiSetupGpio() == -1 )
 			{exit( 1 );}
 	
-	//test code for pins
-	/*
 	while(1)
 	{
-		digitalWrite(fanPin, 1);
-		digitalWrite(peltierPin, 1);
-		delay(500);
-		digitalWrite(fanPin, 0);
-		digitalWrite(peltierPin, 0);
-		delay(500);
-		printf("meow\n");
-	}*/
-	
-	while(1)
-	{
-		printf("time%i:%i AN0:%4.2f AN1:%4.2f boxHumid:%i boxTemp:%i tubHumid:%i tubTemp:%i \n"
-			, hr, mn, pHtest, waterLevel, boxHumid, boxTemp, tubHumid, tubTemp);
-			
-			//TEMPERATURE SENSORS -> FANS n PELTIERS
-			//checks box temp every cycle and adjusts fan
-			DHTPIN = 22;				//switch to box pin
-			read_dht11_dat();		//read box data
-			boxHumid = Humidity;	//update box humidity values
-			boxTemp = Temperature;	//update box temperature values
-			//if too hot turn on fans
-			if (boxTempMax < boxTemp)
-			{
-				digitalWrite(fanPin, 1);
-				if (boxTemp - boxTempMax > 2) 
-					{pwmWrite(pwmPin, pwmHI);} // PWM High when 2+ degrees over
-				else
-					{pwmWrite(pwmPin, pwmLO);} // PWM Low when 1 degree over
-			}
+		//TEMPERATURE SENSORS -> FANS n PELTIERS
+		//checks box temp every cycle and adjusts fan
+		DHTPIN = 22;			//switch to box pin
+		read_dht11_dat();		//read box data
+		boxHumid = Humidity;	//update box humidity values
+		boxTemp = Temperature;	//update box temperature values
+		//if too hot turn on fans
+		if (boxTempMax < boxTemp)
+		{
+			digitalWrite(fanPin, 1);
+			if (boxTemp - boxTempMax > 2) 
+				{
+					//pwmWrite(pwmPin, pwmHI);	// PWM High when 2+ degrees over
+					digitalWrite(fanPin, 1);
+				} 
 			else
-			{
-				digitalWrite(fanPin, 0);
-				pwmWrite(pwmPin, 0); // PWM LED at dim setting
-			}
-			//checks tub temp every cycle and adjusts peltier
-			DHTPIN = 23;			//switch to tub pin
-			read_dht11_dat();	
-			tubHumid = Humidity;
-			tubTemp = Temperature;
-			//if too hot turn on peltier
-			if (tubTempMax < tubTemp)
-			{digitalWrite(peltierPin, 1);}	
+				{
+					//pwmWrite(pwmPin, pwmLO); // PWM Low when 1 degree over
+					digitalWrite(fanPin, 1);
+				}
+		}
+		else
+		{
+			digitalWrite(fanPin, 0);
+			//pwmWrite(pwmPin, 0); // PWM LED at dim setting
+		}
+		//checks tub temp every cycle and adjusts peltier
+		DHTPIN = 23;			//switch to tub pin
+		read_dht11_dat();	
+		tubHumid = Humidity;
+		tubTemp = Temperature;
+		//if too hot turn on peltier
+		if (tubTempMax < tubTemp)
+		{
+			digitalWrite(peltierPin, 1);	//turns on cooler if too hot
+			if (tubTemp > (tubTempMax + 2))
+				{hotFlag = 1;}				//if two degress hotter than Max, it flags LED
 			else
-			{digitalWrite(peltierPin, 0);}
+				{hotFlag = 0;}
+		}	
+		else
+		{
+			digitalWrite(peltierPin, 0);	//turns off cooler & flag
+			hotFlag = 0;
+		}		
 			
 			
 		if (mn != minCall())	//if a minute has passed
 		{
 			mn = minCall();	//resets tracker
+			hr = hourCall();	//resets tracker
 			
 			//code to update temp&humidity in thingspeak<-------------
 			
@@ -152,15 +164,18 @@ int main()
 			}
 			//code to update thingspeak<-------------
 			
-		}//end min if
-		
-		if (hr != hourCall())	//if an hour has passed
-		{
-			hr = hourCall();	//resets tracker
-			
 			pHtest = adc0();	//read analogs
+			if (pHtest <= pHmin || pHtest >= pHmax)
+				{acidFlag = 1;}		//LED flag
+			else
+				{acidFlag = 0;}
+			
 			waterLevel = adc1();
-			printf("%4.3f %4.3f", pHtest, waterLevel);
+			if (pHtest <= waterMin)
+				{wetFlag = 1;}		//LED flag
+			else
+				{wetFlag = 0;}
+			
 			//code to update thingspeak<-------------
 			
 			if (begLED<endLED)	//if hours following normal rhythms
@@ -184,8 +199,51 @@ int main()
 			
 			//code to update thingspeak<-------------
 			
+		}//end min if
+		
+		/* CAN USE IF YOU NEED SOMETHING CHECKED HOURLY
+		if (hr != hourCall())	//if an hour has passed
+		{
+			hr = hourCall();	//resets tracker
+			
+			
 		}//end hr if
+		*/
+		if (hotFlag == 1 && wetFlag == 1)
+		{
+			digitalWrite(redLed, 0);	//purple
+			digitalWrite(grnLed, 1);
+			digitalWrite(bluLed, 0);
+		}
+		else if (hotFlag == 1)
+		{
+			digitalWrite(redLed, 0);	//red
+			digitalWrite(grnLed, 1);
+			digitalWrite(bluLed, 1);
+		}
+		else if (wetFlag == 1)
+		{
+			digitalWrite(redLed, 1);	//blue
+			digitalWrite(grnLed, 1);
+			digitalWrite(bluLed, 0);
+		}
+		else if (acidFlag == 1)
+		{
+			digitalWrite(redLed, 0);	//orangish
+			digitalWrite(grnLed, 0);
+			digitalWrite(bluLed, 1);
+		}
+		else
+		{
+			digitalWrite(redLed, 1);	//green means okay!
+			digitalWrite(grnLed, 0);
+			digitalWrite(bluLed, 1);
+		}
+		
 		delay(2000);	//why the hurry?
+		
+		printf("time%i:%i pH:%4.2f water:%4.2f boxHumid:%i boxTemp:%i tubHumid:%i tubTemp:%i \n"
+			, hr, mn, pHtest, waterLevel, boxHumid, boxTemp, tubHumid, tubTemp);	//update serial monitor
 	}//end while
 	
 	return 0;
