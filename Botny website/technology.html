@@ -22,16 +22,23 @@
 			<iframe width="450" height="260" src="https://thingspeak.com/channels/173369/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=30&type=line"></iframe>
 			<iframe width="450" height="260" src="https://thingspeak.com/channels/173369/charts/3?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=30&type=line"></iframe>
 			<h1>Environment setup</h1>
-			<form>
+			<form name="envionmentSetup" method="POST" action="csv.php">
 				Light schedule:<br>
-				<input placeholder="Start"></input><input placeholder="End"></input><br>
+				<input type="text" name="lightStart" placeholder="Start"></input>
+				<input type="text" name="lightEnd" placeholder="End"></input><br>
 				Fogger schedule:<br>
-				<input placeholder="Start"></input><input placeholder="End"></input><br>
-				Temperature range:<br>
-				<input placeholder="Minimum"></input><input placeholder="Maximum"></input><br>
+				<input type="text" name="foggerStart" placeholder="Start"></input>
+				<input type="text" name="foggerEnd" placeholder="End"></input><br>
+				Plant temperature range:<br>
+				<input type="text" name="plantTempMin" placeholder="Minimum"></input>
+				<input type="text" name="plantTempMax" placeholder="Maximum"></input><br>
+				Root temperature range:<br>
+				<input type="text" name="rootTempMin" placeholder="Minimum"></input>
+				<input type="text" name="rootTempMax" placeholder="Maximum"></input><br>
 				pH range:<br>
-				<input placeholder="Minimum"></input><input placeholder="Maximum"></input><br>
-				<input type="submit"></input>
+				<input type="text" name="pHMin" placeholder="Minimum"></input>
+				<input type="text" name="pHMax" placeholder="Maximum"></input><br>
+				<input type="submit">
 			</form>
 		</div>
 	</body>
