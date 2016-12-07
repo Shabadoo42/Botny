@@ -4,17 +4,14 @@
  *	DHT11 test
  */
  
-#include <wiringPi.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include "ths.h"
 
 #define MAXTIMINGS	85
 #define DHTPIN		7 //GPIO 4
 int dht11_dat[5] = { 0, 0, 0, 0, 0 };
 int whileCounter = 0;
 
-void read_dht11_dat()
+int read_dht11_dat()
 {
 	while(1)
 	{
@@ -81,22 +78,20 @@ void read_dht11_dat()
 		printf( "Data not good, skip\n" );
 		//printf("CS%i\n",j);
 	}
-	//if (whileCounter >= 1) break;
-	delay(1000);
+	if (whileCounter >= 1) break;
 }//while end
+return dht11_dat[2];
 }
  
-int main( void )
+int thsUp( void )
 {
-	printf( "Raspberry Pi wiringPi DHT11 Temperature test program\n" );
- 
 	if ( wiringPiSetup() == -1 )
 		exit( 1 );
  
 	
-		read_dht11_dat();
-		delay( 1000 ); /* wait 1sec to refresh */
+		int z = read_dht11_dat();
+		delay( 500 ); /* wait 1sec to refresh */
 	
  
-	return(0);
+	return(z);
 }

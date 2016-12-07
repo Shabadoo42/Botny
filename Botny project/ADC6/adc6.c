@@ -11,6 +11,9 @@
 #include <inttypes.h>	//uint8_t, etc
 #include <linux/i2c-dev.h>	//i2c bus defintions
 
+//added to work on new pi
+#include <sys/ioctl.h>
+
 //says connect ADR to GRD ...but doesn't seem to make a difference
 //setup to use ADC0 single ended
 
