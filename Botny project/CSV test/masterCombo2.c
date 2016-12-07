@@ -13,10 +13,6 @@
 //timecall
 #include <time.h>
 #include <sys/ioctl.h>
-//ADC
-#include <sys/ioctl.h>
-
-#include <string.h>
 
 //time call functions
 int minCall(void);
@@ -40,13 +36,6 @@ void read_dht11_dat();
 int Humidity = 0;		//current humid
 int Temperature = 0;	//current temp
 
-struct data {
-	char field[255];
-	int value;
-}CSVdata;
-
-void readCSVdata();
-int checkToken(char *token, char *delimiter);
 
 int main()
 {
@@ -61,9 +50,8 @@ int main()
 	int redLed = 19;
 	int grnLed = 13;
 	int bluLed = 6;
-	int doorPin =24;
-	//int pwmHI = 1024; //max value 1024
-	//int pwmLO = 512; //max value 1024
+	int pwmHI = 1024; //max value 1024
+	int pwmLO = 512; //max value 1024
 	
 	//OUTPUTS
 	pinMode(lightPin, OUTPUT);
@@ -76,50 +64,38 @@ int main()
 	pinMode(redLed, OUTPUT);
 	pinMode(grnLed, OUTPUT);
 	pinMode(bluLed, OUTPUT);
-	pinMode(doorPin, INPUT);
 	
 	//MAIN VARIABLES
 	//int hr = hourCall();	//set time initially
 	//int mn = minCall();
 	int hr = 99;			//offset to check everything at beginning
 	int mn = 99;			//offset to check everything at beginning
-	int begLED = 6;			//LED start hour 			<--set LED start
-	int endLED = 23;		//LED end hour				<--set LED end
+	int begLED = 6;			//LED start hour 
+	int endLED = 23;		//LED end hour
 	int boxHumid = 0;		//box humidity
 	int tubHumid = 0;		//box humidity
 	int boxTemp = 0;		//box temp
 	int tubTemp = 0;		//box temp
-	int boxTempMax = 4;		//Celsius max desired heat 	<--- set box max temp
-	int tubTempMax = 25;	//Celsius max desired heat 	<--- set tub amx temp
-	int DCon = 2;			//fogger on time			<--- set fog on
-	int DCoff = 2;			//fogger off time			<--- set fog off
+	int boxTempMax = 4;		//Celsius max desired heat <--- set
+	int tubTempMax = 25;		//Celsius max desired heat <--- set
+	int DCon = 2;			//fogger on time
+	int DCoff = 2;			//fogger off time
 	int fogTracker = 0;		//tracks which minute in duty cycle
 	float pHtest = 0;		//intial ADC readings
-	float pHmin = 0;		//min desired pH			<---set pH min
-	float pHmax = 9;		//max desired pH			<---set pH max
-	//float waterLevel = 0;	//not needed anymore
-	//float waterMin = 0.5;	//minimum water level
+	float pHmin = 0;		//min desired pH	<---set
+	float pHmax = 9;		//max desired pH	<---set
+	float waterLevel = 0;
+	float waterMin = 0.5;	//minimum water level <---set
 	int hotFlag = 0;		//flag for hottub
 	int acidFlag = 0;		//flag for pH
-	int doorFlag = 0;		//flag for water level
+	int wetFlag = 0;		//flag for water level
 	
 	//sets up dht11 sensor and pins
 	if ( wiringPiSetupGpio() == -1 )
 			{exit( 1 );}
-			
-	digitalWrite(lightPin, 0);
-	digitalWrite(foggerPin, 0);
-	digitalWrite(fanPin, 0);
-	digitalWrite(peltierPin, 0);
-	digitalWrite(circPump, 0);
-	digitalWrite(airstone, 1);
-	digitalWrite(redLed, 1);
-	digitalWrite(grnLed, 1);
-	digitalWrite(bluLed, 1);
 	
 	while(1)
 	{
-		readCSVdata();
 		//TEMPERATURE SENSORS -> FANS n PELTIERS
 		//checks box temp every cycle and adjusts fan
 		DHTPIN = 22;			//switch to box pin
@@ -131,31 +107,24 @@ int main()
 		{
 			digitalWrite(fanPin, 1);
 			if (boxTemp - boxTempMax > 2) 
-				{
-					//pwmWrite(pwmPin, pwmHI);	// PWM High when 2+ degrees over
-					digitalWrite(fanPin, 1);
-				} 
+				{pwmWrite(pwmPin, pwmHI);} // PWM High when 2+ degrees over
 			else
-				{
-					//pwmWrite(pwmPin, pwmLO); // PWM Low when 1 degree over
-					digitalWrite(fanPin, 1);
-				}
+				{pwmWrite(pwmPin, pwmLO);} // PWM Low when 1 degree over
 		}
 		else
 		{
 			digitalWrite(fanPin, 0);
-			//pwmWrite(pwmPin, 0); // PWM LED at dim setting
+			pwmWrite(pwmPin, 0); // PWM LED at dim setting
 		}
 		//checks tub temp every cycle and adjusts peltier
 		DHTPIN = 23;			//switch to tub pin
 		read_dht11_dat();	
 		tubHumid = Humidity;
 		tubTemp = Temperature;
-		//if too hot turn on peltier & circ pump
+		//if too hot turn on peltier
 		if (tubTempMax < tubTemp)
 		{
 			digitalWrite(peltierPin, 1);	//turns on cooler if too hot
-			digitalWrite(circPump, 1);		//turns on circ pump
 			if (tubTemp > (tubTempMax + 2))
 				{hotFlag = 1;}				//if two degress hotter than Max, it flags LED
 			else
@@ -164,16 +133,8 @@ int main()
 		else
 		{
 			digitalWrite(peltierPin, 0);	//turns off cooler & flag
-			digitalWrite(circPump, 0);		//turns off circ pump
 			hotFlag = 0;
-		}	
-		
-		//door trigger code
-		if (digitalRead(doorPin) == 1)
-			{doorFlag = 1;}
-		else
-			{doorFlag = 0;}
-			
+		}		
 			
 			
 		if (mn != minCall())	//if a minute has passed
@@ -203,15 +164,13 @@ int main()
 			else
 				{acidFlag = 0;}
 			
-			/*
-			 * old water level sensor code
 			waterLevel = adc1();
 			if (pHtest <= waterMin)
 				{wetFlag = 1;}		//LED flag
 			else
 				{wetFlag = 0;}
-			*/
 			
+			//code to update thingspeak<-------------
 			
 			if (begLED<endLED)	//if hours following normal rhythms
 			{
@@ -239,10 +198,12 @@ int main()
 		/* CAN USE IF YOU NEED SOMETHING CHECKED HOURLY
 		if (hr != hourCall())	//if an hour has passed
 		{
-			hr = hourCall();	//resets tracker	
+			hr = hourCall();	//resets tracker
+			
+			
 		}//end hr if
 		*/
-		if (hotFlag == 1 && doorFlag == 1)
+		if (hotFlag == 1 && wetFlag == 1)
 		{
 			digitalWrite(redLed, 0);	//purple
 			digitalWrite(grnLed, 1);
@@ -254,7 +215,7 @@ int main()
 			digitalWrite(grnLed, 1);
 			digitalWrite(bluLed, 1);
 		}
-		else if (doorFlag == 1)
+		else if (wetFlag == 1)
 		{
 			digitalWrite(redLed, 1);	//blue
 			digitalWrite(grnLed, 1);
@@ -275,10 +236,8 @@ int main()
 		
 		delay(2000);	//why the hurry?
 		
-		printf("time%i:%i pH:%4.2f boxHumid:%i boxTemp:%i tubHumid:%i tubTemp:%i \n"
-			, hr, mn, pHtest, boxHumid, boxTemp, tubHumid, tubTemp);	//update serial monitor
-		printf("door:%i hot:%i Acid:%i\n"
-			, doorFlag, hotFlag, acidFlag);
+		printf("time%i:%i pH:%4.2f water:%4.2f boxHumid:%i boxTemp:%i tubHumid:%i tubTemp:%i \n"
+			, hr, mn, pHtest, waterLevel, boxHumid, boxTemp, tubHumid, tubTemp);	//update serial monitor
 	}//end while
 	
 	return 0;
@@ -594,44 +553,3 @@ void read_dht11_dat()
 }//while end
 }
 
-void readCSVdata(void) {
-	printf("Reading CSV file:\n");
-	FILE *CSVfile = fopen("/home/pi/Documents/Botny project/CSV test/CSVtestfile.csv", "r");
-	char buffer[255];
-	fgets(buffer, sizeof(buffer), CSVfile);
-	fclose(CSVfile);
-
-	char *delimiter = ",";
-	char *token = strtok(buffer, delimiter);
-	checkToken(token, delimiter);
-	while(token != NULL) {
-		token = strtok(NULL, delimiter);
-		checkToken(token, delimiter);
-	}
-	printf(" Done.\n");
-}
-
-int checkToken(char *token, char *delimiter) {
-	if(token == NULL) {
-		return 0;
-	}
-	else if(strcmp(token, "blinkDelay") == 0) {
-		strcpy(CSVdata.field, token);
-		printf(" Field: %s\n", CSVdata.field);
-
-		token = strtok(NULL, delimiter);
-		CSVdata.value = atoi(token);
-		printf(" Value: %i\n", CSVdata.value);
-	}
-	else if(strcmp(token, "herp") == 0) {
-		printf(" Field: %s\n", token);
-
-		token = strtok(NULL, delimiter);
-		int number = atoi(token);
-		printf(" Value: %i\n", number);
-	}
-	else {
-		printf(" Error: field unspecified: %s\n", token);
-	}
-	return 0;
-}

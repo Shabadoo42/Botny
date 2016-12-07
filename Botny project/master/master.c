@@ -20,7 +20,7 @@
 
 int main()
 {
-	wiringPiSetupGpio();
+	//wiringPiSetupGpio();
 	
 	int pin = 1800;	//test led
 	int lightPin = 111;		//change
