@@ -13,6 +13,8 @@
 //timecall
 #include <time.h>
 #include <sys/ioctl.h>
+//ADC
+#include <sys/ioctl.h>
 
 #include <string.h>
 
@@ -39,8 +41,26 @@ int Humidity = 0;		//current humid
 int Temperature = 0;	//current temp
 
 struct data {
-	char field[255];
-	int value;
+	char lightStartField[255];
+	int lightStartValue;
+	char lightEndField[255];
+	int lightEndValue;
+	char foggerStartField[255];
+	int foggerStartValue;
+	char foggerEndField[255];
+	int foggerEndValue;
+	char plantTempMinField[255];
+	int plantTempMinValue;
+	char plantTempMaxField[255];
+	int plantTempMaxValue;
+	char rootTempMinField[255];
+	int rootTempMinValue;
+	char rootTempMaxField[255];
+	int rootTempMaxValue;
+	char pHMinField[255];
+	int pHMinValue;
+	char pHMaxField[255];
+	int pHMaxValue;
 }CSVdata;
 
 void readCSVdata();
@@ -81,7 +101,7 @@ int main()
 	//int mn = minCall();
 	int hr = 99;			//offset to check everything at beginning
 	int mn = 99;			//offset to check everything at beginning
-	int begLED = 6;			//LED start hour 			<--set LED start
+	int begLED = 2;			//LED start hour 			<--set LED start
 	int endLED = 23;		//LED end hour				<--set LED end
 	int boxHumid = 0;		//box humidity
 	int tubHumid = 0;		//box humidity
@@ -118,6 +138,15 @@ int main()
 	while(1)
 	{
 		readCSVdata();
+		begLED = CSVdata.lightStartValue;			//LED start hour 			<--set LED start
+		endLED = CSVdata.lightEndValue;
+		boxTempMax = CSVdata.plantTempMaxValue;		//Celsius max desired heat 	<--- set box max temp
+		tubTempMax = CSVdata.rootTempMaxValue;
+		DCon = CSVdata.foggerStartValue;			//fogger on time			<--- set fog on
+		DCoff = CSVdata.foggerEndValue;
+		pHmin = CSVdata.pHMinValue;		//min desired pH			<---set pH min
+		pHmax = CSVdata.pHMaxValue;
+		
 		//TEMPERATURE SENSORS -> FANS n PELTIERS
 		//checks box temp every cycle and adjusts fan
 		DHTPIN = 22;			//switch to box pin
@@ -166,11 +195,12 @@ int main()
 			hotFlag = 0;
 		}	
 		
+		
 		//door trigger code
 		if (digitalRead(doorPin) == 1)
-			{doorFlag = 1;}
-		else
 			{doorFlag = 0;}
+		else
+			{doorFlag = 1;}
 			
 			
 			
@@ -195,7 +225,7 @@ int main()
 			}
 			//code to update thingspeak<-------------
 			
-			pHtest = adc0();	//read analogs
+			pHtest = (((-17)*adc0()) + 9.1);	//read analog
 			if (pHtest <= pHmin || pHtest >= pHmax)
 				{acidFlag = 1;}		//LED flag
 			else
@@ -594,7 +624,7 @@ void read_dht11_dat()
 
 void readCSVdata(void) {
 	printf("Reading CSV file:\n");
-	FILE *CSVfile = fopen("/home/pi/Documents/Botny project/CSV test/CSVtestfile.csv", "r");
+	FILE *CSVfile = fopen("/home/pi/Desktop/botny.csv", "r");
 	char buffer[255];
 	fgets(buffer, sizeof(buffer), CSVfile);
 	fclose(CSVfile);
@@ -613,23 +643,88 @@ int checkToken(char *token, char *delimiter) {
 	if(token == NULL) {
 		return 0;
 	}
-	else if(strcmp(token, "blinkDelay") == 0) {
-		strcpy(CSVdata.field, token);
-		printf(" Field: %s\n", CSVdata.field);
+	else if(strcmp(token, "lightStart") == 0) {
+		strcpy(CSVdata.lightStartField, token);
+		//printf(" Field: %s\n", CSVdata.lightStartField);
 
 		token = strtok(NULL, delimiter);
-		CSVdata.value = atoi(token);
-		printf(" Value: %i\n", CSVdata.value);
+		CSVdata.lightStartValue = atoi(token);
+		//printf(" Value: %i\n", CSVdata.lightStartValue);
 	}
-	else if(strcmp(token, "herp") == 0) {
-		printf(" Field: %s\n", token);
+	else if(strcmp(token, "lightEnd") == 0) {
+		strcpy(CSVdata.lightEndField, token);
+		//printf(" Field: %s\n", CSVdata.lightEndField);
 
 		token = strtok(NULL, delimiter);
-		int number = atoi(token);
-		printf(" Value: %i\n", number);
+		CSVdata.lightEndValue = atoi(token);
+		//printf(" Value: %i\n", CSVdata.lightEndValue);
+	}
+	else if(strcmp(token, "foggerStart") == 0) {
+		strcpy(CSVdata.foggerStartField, token);
+		//printf(" Field: %s\n", CSVdata.foggerStartField);
+
+		token = strtok(NULL, delimiter);
+		CSVdata.foggerStartValue = atoi(token);
+		//printf(" Value: %i\n", CSVdata.foggerStartValue);
+	}
+	else if(strcmp(token, "foggerEnd") == 0) {
+		strcpy(CSVdata.foggerEndField, token);
+		//printf(" Field: %s\n", CSVdata.foggerEndField);
+
+		token = strtok(NULL, delimiter);
+		CSVdata.foggerEndValue = atoi(token);
+		//printf(" Value: %i\n", CSVdata.foggerEndValue);
+	}
+	else if(strcmp(token, "plantTempMin") == 0) {
+		strcpy(CSVdata.plantTempMinField, token);
+		//printf(" Field: %s\n", CSVdata.plantTempMinField);
+
+		token = strtok(NULL, delimiter);
+		CSVdata.plantTempMinValue = atoi(token);
+		//printf(" Value: %i\n", CSVdata.plantTempMinValue);
+	}
+	else if(strcmp(token, "plantTempMax") == 0) {
+		strcpy(CSVdata.plantTempMaxField, token);
+		//printf(" Field: %s\n", CSVdata.plantTempMaxField);
+
+		token = strtok(NULL, delimiter);
+		CSVdata.plantTempMaxValue = atoi(token);
+		//printf(" Value: %i\n", CSVdata.plantTempMaxValue);
+	}
+	else if(strcmp(token, "rootTempMin") == 0) {
+		strcpy(CSVdata.rootTempMinField, token);
+		//printf(" Field: %s\n", CSVdata.rootTempMinField);
+
+		token = strtok(NULL, delimiter);
+		CSVdata.rootTempMinValue = atoi(token);
+		//printf(" Value: %i\n", CSVdata.rootTempMinValue);
+	}
+	else if(strcmp(token, "rootTempMax") == 0) {
+		strcpy(CSVdata.rootTempMaxField, token);
+		//printf(" Field: %s\n", CSVdata.rootTempMaxField);
+
+		token = strtok(NULL, delimiter);
+		CSVdata.rootTempMaxValue = atoi(token);
+		//printf(" Value: %i\n", CSVdata.rootTempMaxValue);
+	}
+	else if(strcmp(token, "pHMin") == 0) {
+		strcpy(CSVdata.pHMinField, token);
+		//printf(" Field: %s\n", CSVdata.pHMinField);
+
+		token = strtok(NULL, delimiter);
+		CSVdata.pHMinValue = atoi(token);
+		//printf(" Value: %i\n", CSVdata.pHMinValue);
+	}
+	else if(strcmp(token, "pHMax") == 0) {
+		strcpy(CSVdata.pHMaxField, token);
+		//printf(" Field: %s\n", CSVdata.pHMaxField);
+
+		token = strtok(NULL, delimiter);
+		CSVdata.pHMaxValue = atoi(token);
+		//printf(" Value: %i\n", CSVdata.pHMaxValue);
 	}
 	else {
-		printf(" Error: field unspecified: %s\n", token);
+		//printf(" Error: field unspecified: %s\n", token);
 	}
 	return 0;
 }
