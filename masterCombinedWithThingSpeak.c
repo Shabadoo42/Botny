@@ -18,6 +18,7 @@
 #define field3 "&3=" 
 #define field4 "&4=" 
 #define field5 "&5=" 
+#define field6 "&6="
 #define CRLF "\r\n" 
 //--------------------
 
@@ -47,7 +48,7 @@ int hourCall(void);
 
 //thingspeak code to send variables to thingspeak -----
 
-int thingSpeakFunction(int boxHumid, int tubHumid, int boxTemp, int tubTemp, int pHtest);
+int thingSpeakFunction(int boxHumid, int tubHumid, int boxTemp, int tubTemp, float pHtest);
 
 //---------------------------
 //ADC functions
@@ -246,12 +247,12 @@ int main()
 			
 			if (DCon > fogTracker)
 			{
-				digitalWrite(peltierPin, 1);	//fog on
+				digitalWrite(foggerPin, 1);	//fog on
 				fogTracker++;	//increments tracker
 			}
 			else
 			{
-				digitalWrite(peltierPin, 0);	//fog off
+				digitalWrite(foggerPin, 0);	//fog off
 				fogTracker++;	//increments tracker
 				if (fogTracker >= (DCon + DCoff))
 				{fogTracker = 0;}
@@ -340,31 +341,36 @@ int main()
 			, hr, mn, pHtest, boxHumid, boxTemp, tubHumid, tubTemp);	//update serial monitor
 		printf("door:%i hot:%i Acid:%i\n"
 			, doorFlag, hotFlag, acidFlag);
-	}//end while
+			
+	thingSpeakFunction(boxHumid, tubHumid, boxTemp, tubTemp, pHtest);
 	
-	thingSpeakFunction(boxHumid, tubHumid, boxTemp, tubTemp, (float)pHtest);
+	}//end while
 	
 	return 0;
 } 
 
-int thingSpeakFunction(int boxHumid, int tubHumid, int boxTemp, int tubTemp, int pHtest)
+int thingSpeakFunction(int boxHumid, int tubHumid, int boxTemp, int tubTemp, float pHtest)
 {
 	{
 	int socket_desc;
     struct sockaddr_in server;
     char msg[80]="";
     char boxHumidString[6];
-    char tubHumidString [6];
-    char boxTempString [6];
-    char tubTempString [6];
-    char pHtestString [6];
+    char tubHumidString[6];
+    char boxTempString[6];
+    char tubTempString[6];
+    char pHtestString[6];
     
-    sprintf(boxHumidString, "%d", boxHumid);
-    sprintf(tubHumidString, "%d", tubHumid);
-    sprintf(boxTempString, "%d", boxTemp);
-    sprintf(tubTempString, "%d", tubTemp);
-    sprintf(pHtestString, "%f", (float)pHtest);
+    sprintf(tubTempString, "%i", tubTemp);
+    sprintf(boxHumidString, "%i", boxHumid);
+    sprintf(tubHumidString, "%i", tubHumid);
+    sprintf(boxTempString, "%i", boxTemp);
+    
+    sprintf(pHtestString, "%0.2f", pHtest);
      
+    printf("tubTemp:%i \n", tubTemp);
+	printf("tubTempString:%s \n", tubTempString);
+	
     //Create socket
     socket_desc = socket(AF_INET , SOCK_STREAM , 0);
     if (socket_desc == -1)
@@ -394,7 +400,7 @@ int thingSpeakFunction(int boxHumid, int tubHumid, int boxTemp, int tubTemp, int
     strcat(msg, tubHumidString);
     strcat(msg, field3);
     strcat(msg, boxTempString); 
-    strcat(msg, field4);
+    strcat(msg, field6);
     strcat(msg, tubTempString);
     strcat(msg, field5);
     strcat(msg, pHtestString); 
@@ -415,9 +421,6 @@ int thingSpeakFunction(int boxHumid, int tubHumid, int boxTemp, int tubTemp, int
  }
    
       
-   
-
-
 
 
 //TIME CALL FUNCTIONS
