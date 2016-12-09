@@ -32,4 +32,6 @@
 	$file = fopen("botny.csv","w");
 	fputcsv($file,$fields);
 	fclose($file);
+	
+	echo "Data submitted";
 ?>
